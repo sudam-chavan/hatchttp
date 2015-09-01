@@ -152,6 +152,10 @@ public class HatcHttpRequest {
             @Override
             public void onResponse(String response) {
                 Log.d(TAG, mUrl + ":" + response);
+                if(response == null || response.length() == 0){
+                    hatcHttpRequestListener.onException(new Throwable("Invalid response"));
+                    return;
+                }
                 hatcHttpRequestListener.onComplete(200, response);
             }
         }, new Response.ErrorListener() {
@@ -160,6 +164,10 @@ public class HatcHttpRequest {
                 Log.e(TAG, mUrl + ":" + error.getMessage(), error);
                 if (error.networkResponse != null) {
                     hatcHttpRequestListener.onException(new Throwable(new String(error.networkResponse.data)));
+                    return;
+                }
+                if(error.getCause() == null) {
+                    hatcHttpRequestListener.onException(new Throwable("Unknown error"));
                     return;
                 }
                 hatcHttpRequestListener.onException(error.getCause());
