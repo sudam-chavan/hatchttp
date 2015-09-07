@@ -260,6 +260,10 @@ public class HatcHttpRequest {
         HatcHttpClient.Get().addRequest(request);
     }
 
+    public String getUrl(){
+        return mUrl;
+    }
+
     public void setHatcHttpLifeCycle(HatcHttpLifeCycle lifeCycle){
         mLifeCycle = lifeCycle;
     }
