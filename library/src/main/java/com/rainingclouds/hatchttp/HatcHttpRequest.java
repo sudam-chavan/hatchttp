@@ -37,7 +37,7 @@ public class HatcHttpRequest {
     private Map<String, String> mParams;
     private String mAuth;
     private DefaultRetryPolicy retryPolicy;
-    private HatcHttpLifeCycle mLifeCycle;
+    private static HatcHttpLifeCycle mLifeCycle;
 
     private HatcHttpRequest(final String url, final int method) {
         mMethod = method;
@@ -272,13 +272,13 @@ public class HatcHttpRequest {
         return mLifeCycle;
     }
 
-    private void onPreExecute(HatcHttpRequest request){
+    private static void onPreExecute(final HatcHttpRequest request){
         if(mLifeCycle == null)
             return;
         mLifeCycle.onPreExecute(request);
     }
 
-    private void onPostExecute(HatcHttpRequest request){
+    private static void onPostExecute(final HatcHttpRequest request){
         if(mLifeCycle == null)
             return;
         mLifeCycle.onPostExecute(request);
