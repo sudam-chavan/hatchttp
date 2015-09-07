@@ -37,6 +37,7 @@ public class HatcHttpRequest {
     private Map<String, String> mParams;
     private String mAuth;
     private DefaultRetryPolicy retryPolicy;
+    private HatcHttpLifeCycle mLifeCycle;
 
     private HatcHttpRequest(final String url, final int method) {
         mMethod = method;
@@ -151,6 +152,7 @@ public class HatcHttpRequest {
      * @param hatcHttpRequestListener listener for this request
      */
     public void execute(final HatcHttpRequestListener hatcHttpRequestListener) {
+        onPreExecute(this);
         final Uri.Builder builder = Uri.parse(mUrl).buildUpon();
         for (Map.Entry<String, String> param : mParams.entrySet()) {
             builder.appendQueryParameter(param.getKey(), param.getValue());
@@ -166,12 +168,14 @@ public class HatcHttpRequest {
                     return;
                 }
                 hatcHttpRequestListener.onComplete(200, response);
+                HatcHttpRequest.onPostExecute(HatcHttpRequest.this);
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
                 Log.e(TAG, mUrl + ":" + error.getMessage(), error);
                 hatcHttpRequestListener.onException(getException(error));
+                HatcHttpRequest.onPostExecute(HatcHttpRequest.this);
             }
         }) {
             @Override
@@ -199,6 +203,7 @@ public class HatcHttpRequest {
     }
 
     public void execute(final HatcHttpJSONListener hatcHttpJSONListener) {
+        onPreExecute(this);
         final Uri.Builder builder = Uri.parse(mUrl).buildUpon();
         for (Map.Entry<String, String> param : mParams.entrySet()) {
             builder.appendQueryParameter(param.getKey(), param.getValue());
@@ -218,12 +223,14 @@ public class HatcHttpRequest {
                     return;
                 }
                 hatcHttpJSONListener.onComplete(200, responseObject);
+                HatcHttpRequest.onPostExecute(HatcHttpRequest.this);
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
                 Log.e(TAG, mUrl + ":" + error.getMessage(), error);
                 hatcHttpJSONListener.onException(getException(error));
+                HatcHttpRequest.onPostExecute(HatcHttpRequest.this);
             }
         }) {
 
@@ -251,6 +258,26 @@ public class HatcHttpRequest {
         };
         request.setRetryPolicy(retryPolicy);
         HatcHttpClient.Get().addRequest(request);
+    }
+
+    public void setHatcHttpLifeCycle(HatcHttpLifeCycle lifeCycle){
+        mLifeCycle = lifeCycle;
+    }
+
+    public HatcHttpLifeCycle getHatcHttpLifeCycle(){
+        return mLifeCycle;
+    }
+
+    private void onPreExecute(HatcHttpRequest request){
+        if(mLifeCycle == null)
+            return;
+        mLifeCycle.onPreExecute(request);
+    }
+
+    private void onPostExecute(HatcHttpRequest request){
+        if(mLifeCycle == null)
+            return;
+        mLifeCycle.onPostExecute(request);
     }
 
     private Throwable getException(VolleyError error){
