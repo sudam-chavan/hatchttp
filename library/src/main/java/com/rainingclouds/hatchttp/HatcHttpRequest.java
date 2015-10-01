@@ -37,18 +37,17 @@ public class HatcHttpRequest {
     private Map<String, String> mParams;
     private String mAuth;
     private DefaultRetryPolicy retryPolicy;
-    private static HatcHttpLifeCycle mLifeCycle;
 
     private HatcHttpRequest(final String url, final int method) {
         mMethod = method;
         mUrl = url;
+        mHeaders = new HashMap<>();
+        mParams = new HashMap<>();
         retryPolicy = new DefaultRetryPolicy(
                 HatcHttpConfig.getRequestTimeOut() == 0 ?
                         DefaultRetryPolicy.DEFAULT_TIMEOUT_MS : HatcHttpConfig.getRequestTimeOut(),
                 DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
                 DefaultRetryPolicy.DEFAULT_BACKOFF_MULT);
-        mHeaders = new HashMap<>();
-        mParams = new HashMap<>();
     }
 
 
@@ -152,7 +151,6 @@ public class HatcHttpRequest {
      * @param hatcHttpRequestListener listener for this request
      */
     public void execute(final HatcHttpRequestListener hatcHttpRequestListener) {
-        onPreExecute(this);
         final Uri.Builder builder = Uri.parse(mUrl).buildUpon();
         for (Map.Entry<String, String> param : mParams.entrySet()) {
             builder.appendQueryParameter(param.getKey(), param.getValue());
@@ -168,14 +166,12 @@ public class HatcHttpRequest {
                     return;
                 }
                 hatcHttpRequestListener.onComplete(200, response);
-                HatcHttpRequest.onPostExecute(HatcHttpRequest.this);
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
                 Log.e(TAG, mUrl + ":" + error.getMessage(), error);
                 hatcHttpRequestListener.onException(getException(error));
-                HatcHttpRequest.onPostExecute(HatcHttpRequest.this);
             }
         }) {
             @Override
@@ -203,7 +199,6 @@ public class HatcHttpRequest {
     }
 
     public void execute(final HatcHttpJSONListener hatcHttpJSONListener) {
-        onPreExecute(this);
         final Uri.Builder builder = Uri.parse(mUrl).buildUpon();
         for (Map.Entry<String, String> param : mParams.entrySet()) {
             builder.appendQueryParameter(param.getKey(), param.getValue());
@@ -223,14 +218,12 @@ public class HatcHttpRequest {
                     return;
                 }
                 hatcHttpJSONListener.onComplete(200, responseObject);
-                HatcHttpRequest.onPostExecute(HatcHttpRequest.this);
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
                 Log.e(TAG, mUrl + ":" + error.getMessage(), error);
                 hatcHttpJSONListener.onException(getException(error));
-                HatcHttpRequest.onPostExecute(HatcHttpRequest.this);
             }
         }) {
 
@@ -260,39 +253,15 @@ public class HatcHttpRequest {
         HatcHttpClient.Get().addRequest(request);
     }
 
-    public String getUrl(){
-        return mUrl;
-    }
-
-    public void setHatcHttpLifeCycle(HatcHttpLifeCycle lifeCycle){
-        mLifeCycle = lifeCycle;
-    }
-
-    public HatcHttpLifeCycle getHatcHttpLifeCycle(){
-        return mLifeCycle;
-    }
-
-    private static void onPreExecute(final HatcHttpRequest request){
-        if(mLifeCycle == null)
-            return;
-        mLifeCycle.onPreExecute(request);
-    }
-
-    private static void onPostExecute(final HatcHttpRequest request){
-        if(mLifeCycle == null)
-            return;
-        mLifeCycle.onPostExecute(request);
-    }
-
     private Throwable getException(VolleyError error){
         if(error instanceof TimeoutError)
             return new com.rainingclouds.hatchttp.exception.TimeoutError();
         if(error instanceof NoConnectionError)
             return new com.rainingclouds.hatchttp.exception.NoConnectionError(error);
-        if(error.getCause() == null)
-            return new Throwable("Unknown error");
         if (error.networkResponse != null)
             return new Throwable(new String(error.networkResponse.data));
+        if(error.getCause() == null)
+            return new Throwable("Unknown error");
         return error.getCause();
     }
 }
